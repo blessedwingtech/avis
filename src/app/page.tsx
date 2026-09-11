@@ -117,15 +117,20 @@ function ReviewForm() {
         }),
       });
 
-      const data = await res.json();
+      const contentType = res.headers.get('content-type') || '';
+      let data: any = null;
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      }
+
       if (!res.ok) {
-        throw new Error(data.error || 'Erreur lors de la soumission de l\'avis.');
+        throw new Error(data?.error || `Erreur du serveur (${res.status}: ${res.statusText || 'Vérifiez la connexion'})`);
       }
 
       setSuccess(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Une erreur inattendue est survenue.');
     } finally {
       setIsSubmitting(false);
     }
