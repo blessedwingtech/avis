@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-bentzisblessedbythelord}
       POSTGRES_DB: avis_bittonik
     ports:
-      - "5433:5432" # Use 5433 on host to avoid conflict if 5432 is in use
+      - "5434:5432" # Use 5434 on host to avoid conflict
     volumes:
       - avis_hub_pgdata:/var/lib/postgresql/data
 
@@ -21,7 +21,7 @@ services:
     container_name: avis_hub_app
     restart: always
     ports:
-      - "3005:3000" # Expose app on port 3005 (or another available port)
+      - "3006:3000" # Expose app on port 3006
     environment:
       - DATABASE_URL=postgresql://postgres:${DB_PASSWORD:-bentzisblessedbythelord}@db:5432/avis_bittonik?schema=public
       - NEXT_PUBLIC_AVIS_HUB_URL=https://avis.bittonik.com
