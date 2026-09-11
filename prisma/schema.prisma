@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Les 5 sites de l'écosystème Bittonik (+ extensibilité)
+enum SiteSource {
+  BITTONIK
+  PRESSTONIK
+  MEMOTONIK
+  SHOPTONIK
+  BWT
+}
+
+enum ReviewStatus {
+  APPROVED
+  REJECTED
+}
+
+model Review {
+  id              String       @id @default(cuid())
+  
+  // Informations sur l'origine
+  sourceSite      SiteSource
+  serviceRef      String?      // Utile pour spécifier un produit précis (ShopTonik) ou un article/formation
+  
+  // Informations de l'utilisateur
+  userId          String?      // ID de l'utilisateur si connecté via le SSO
+  userName        String?      // Peut être "Utilisateur anonyme" si null
+  userEmail       String?      // Privé, jamais affiché
+  location        String?      // Ville, commune, ou pays
+  avatarUrl       String?      // Photo de profil
+  
+  // Contenu de l'avis
+  rating          Int          // 1 à 5
+  comment         String       @db.Text
+  isPublic        Boolean      @default(true) // L'utilisateur choisit si l'avis est visible par le public
+  
+  // Modération et horodatage
+  status          ReviewStatus @default(APPROVED) // Par défaut approuvé (auto-publié)
+  ipAddress       String?      // Haché, pour le rate-limiting / anti-spam interne
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([sourceSite, status])
+  @@index([rating])
+}
+
+// Optionnel : Table pour bloquer certaines IP ou mots-clés abusifs dynamiquement
+model ModerationRule {
+  id        String   @id @default(cuid())
+  type      String   // "IP_BLOCK", "WORD_FILTER"
+  value     String
+  createdAt DateTime @default(now())
+}
