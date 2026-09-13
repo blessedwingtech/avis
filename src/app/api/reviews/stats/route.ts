@@ -16,7 +16,7 @@ export async function OPTIONS() {
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const source = searchParams.get('source');
+  const source = searchParams.get('source') || searchParams.get('sourceSite');
 
   try {
     const where: any = {
