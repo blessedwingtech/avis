@@ -71,20 +71,40 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { sourceSite, serviceRef, userName, userEmail, location, rating, comment, isPublic } = body;
+
+    // Normalisation intelligente et polymorphe (Tolérant à tous les formats : camelCase, snake_case, FR, EN)
+    const rawSource = body.sourceSite || body.source_site || body.source || body.site || '';
+    const sourceSite = typeof rawSource === 'string' ? rawSource.trim().toUpperCase() : '';
+
+    const serviceRef = body.serviceRef || body.service_ref || body.product || body.item || null;
+    const userId = body.userId || body.user_id || body.uid || body.id_user || null;
+    const userName = body.userName || body.user_name || body.name || body.nom || body.nomComplet || body.nom_complet || body.fullName || body.full_name || body.username || 'Utilisateur anonyme';
+    const userEmail = body.userEmail || body.user_email || body.email || body.mail || body.courriel || null;
+    const avatarUrl = body.avatarUrl || body.avatar_url || body.avatar || body.photo || body.image || body.picture || body.profilePic || body.profile_picture || null;
+    const location = body.location || body.ville || body.city || body.pays || body.country || null;
+
+    const rawRating = body.rating ?? body.note ?? body.stars ?? body.etoiles;
+    const rating = typeof rawRating === 'string' ? parseInt(rawRating, 10) : Number(rawRating);
+
+    const rawComment = body.comment || body.message || body.avis || body.text || body.content || '';
+    const comment = typeof rawComment === 'string' ? rawComment.trim() : '';
+
+    const isPublic = body.isPublic !== undefined 
+      ? Boolean(body.isPublic) 
+      : (body.is_public !== undefined ? Boolean(body.is_public) : true);
 
     // Validation basique
-    if (!sourceSite || !Object.keys(SiteSource).includes(sourceSite.toUpperCase())) {
-      return setCorsHeaders(NextResponse.json({ error: 'Source invalide' }, { status: 400 }));
+    if (!sourceSite || !Object.keys(SiteSource).includes(sourceSite)) {
+      return setCorsHeaders(NextResponse.json({ error: 'Source invalide (doit être BITTONIK, PRESSTONIK, MEMOTONIK, SHOPTONIK ou BWT)' }, { status: 400 }));
     }
-    if (!rating || rating < 1 || rating > 5) {
-      return setCorsHeaders(NextResponse.json({ error: 'La note doit être entre 1 et 5' }, { status: 400 }));
+    if (!rating || isNaN(rating) || rating < 1 || rating > 5) {
+      return setCorsHeaders(NextResponse.json({ error: 'La note doit être un nombre entre 1 et 5' }, { status: 400 }));
     }
-    if (!comment || comment.trim().length < 5) {
-      return setCorsHeaders(NextResponse.json({ error: 'Le commentaire est trop court' }, { status: 400 }));
+    if (!comment || comment.length < 5) {
+      return setCorsHeaders(NextResponse.json({ error: 'Le commentaire doit faire au moins 5 caractères' }, { status: 400 }));
     }
 
-    // Filtre basique des mots (Exemple, on peut l'étendre avec la BD)
+    // Filtre basique des mots abusifs
     const badWords = ['insulte', 'spam', 'viagra'];
     const commentLower = comment.toLowerCase();
     const containsBadWord = badWords.some((word) => commentLower.includes(word));
@@ -93,17 +113,19 @@ export async function POST(req: NextRequest) {
       return setCorsHeaders(NextResponse.json({ error: 'Votre commentaire contient un langage inapproprié.' }, { status: 400 }));
     }
 
-    // Création de l'avis
+    // Création de l'avis avec les colonnes PostgreSQL standardisées
     const newReview = await db.review.create({
       data: {
-        sourceSite: sourceSite.toUpperCase() as SiteSource,
+        sourceSite: sourceSite as SiteSource,
         serviceRef,
-        userName: userName?.trim() || 'Utilisateur anonyme',
-        userEmail,
-        location: location?.trim() || null,
-        rating: parseInt(rating),
-        comment: comment.trim(),
-        isPublic: isPublic !== undefined ? isPublic : true,
+        userId: userId ? String(userId) : null,
+        userName: typeof userName === 'string' ? userName.trim() : 'Utilisateur anonyme',
+        userEmail: userEmail ? String(userEmail).trim() : null,
+        avatarUrl: avatarUrl ? String(avatarUrl).trim() : null,
+        location: location ? String(location).trim() : null,
+        rating,
+        comment,
+        isPublic,
         status: 'APPROVED', // Par défaut approuvé après filtres
       },
     });

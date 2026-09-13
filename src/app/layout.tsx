@@ -16,6 +16,15 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "Avis-Hub | Plateforme d'Avis Certifiés de l'Écosystème BitTonik",
   description: "Partagez votre expérience et consultez les avis certifiés sur l'ensemble de l'écosystème BitTonik (BitTonik, PressTonik, MemoTonik, ShopTonik, BWT).",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: [
+      { url: "/apple-icon.svg", type: "image/svg+xml" },
+    ],
+  },
 };
 
 export default function RootLayout({
