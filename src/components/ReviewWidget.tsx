@@ -140,9 +140,17 @@ export default function ReviewWidget({ currentSite, hubUrl = 'http://localhost:3
                 <div>
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-emerald-100 to-emerald-50 text-emerald-600 rounded-full flex items-center justify-center font-black text-sm uppercase shadow-inner">
-                        {review.userName ? review.userName[0] : 'U'}
-                      </div>
+                      {review.avatarUrl ? (
+                        <img
+                          src={review.avatarUrl}
+                          alt={review.userName || ''}
+                          className="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-sm"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-gradient-to-br from-emerald-100 to-emerald-50 text-emerald-600 rounded-full flex items-center justify-center font-black text-sm uppercase shadow-inner">
+                          {review.userName ? review.userName[0] : 'U'}
+                        </div>
+                      )}
                       <div>
                         <p className="text-base font-bold text-slate-800 leading-tight">
                           {review.userName || 'Utilisateur anonyme'}
