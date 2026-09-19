@@ -7,6 +7,11 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${DB_PASSWORD:-bentzisblessedbythelord}
       POSTGRES_DB: avis_bittonik
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     ports:
       - "5434:5432" # Use 5434 on host to avoid conflict
     volumes:
@@ -24,9 +29,10 @@ services:
       - DATABASE_URL=postgresql://postgres:${DB_PASSWORD:-bentzisblessedbythelord}@db:5432/avis_bittonik?schema=public
       - NEXT_PUBLIC_AVIS_HUB_URL=https://avis.bittonik.com
     depends_on:
-      - db
-    # On boot, wait a bit for db readiness and push DB schema using local prisma binary
-    command: sh -c "sleep 3 && ./node_modules/.bin/prisma db push && node server.js"
+      db:
+        condition: service_healthy
+    # On boot, push DB schema using local prisma binary and start app
+    command: sh -c "./node_modules/.bin/prisma db push && node server.js"
 
 volumes:
   avis_hub_pgdata:
